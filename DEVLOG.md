@@ -6,3 +6,8 @@
 - What I learned: how git init, add, commit and push work, and that requirements go before code.
 ## Day 2:
 - Did: created data.js with real OS data: 1 subject, 10 topics, 35 questions from two past papers.
+
+## Day 3: Counting logic in Node
+- Did: wrote countByTopic and marksByTopic in logic.js using reduce, and printed totals per topic.
+- What broke: nothing. The output matched my hand count for File System (6 questions, 29 marks). [If you hit an error or got a different number, write that instead.]
+- What I learned: how reduce builds one result from an array, why `|| 0` is needed the first time a topic appears, and that the totals show marks offered, not marks a student must answer, because the papers have choices.
