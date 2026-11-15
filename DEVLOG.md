@@ -16,3 +16,7 @@
 - Did: added priorityList (ranked topics with cumulative percentage) and filterQuestions (subject, topic, year, text) to logic.js.
 - What broke: nothing major. My output matched the expected priority list. [If you got an error or a different number, write that instead.]
 - What I learned: how sort with (a, b) => b.marks - a.marks orders from highest to lowest, how a running total gives the cumulative percentage, and how filters combine because every check must pass. Ties (Introduction and Virtual Memory, both 15 marks) keep their original order, so the "first 60%" line depends on that.
+## Day 5: Tests
+- Did: added logic.test.js with 8 tests using hand-computed values, including empty input and ties; made tie-breaking explicit (lower topic id first).
+- What broke: nothing in the first run, all 8 tests passed. When I reversed the sort on purpose, [write which test(s) failed and what the message showed].
+- What I learned: a test calls a function with small data where I know the answer by hand and fails if the result differs. Edge cases like empty input and ties are where bugs hide, so they need their own tests. Tests let me change code later and see straight away if I broke something.

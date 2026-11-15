@@ -24,7 +24,7 @@ function priorityList(topics, questions) {
 
   return topics
     .map((t) => ({ id: t.id, name: t.name, marks: marks[t.id] || 0 }))
-    .sort((a, b) => b.marks - a.marks)
+    .sort((a, b) => b.marks - a.marks || a.id - b.id)
     .map((t) => {
       running += t.marks;
       const percent = total === 0 ? 0 : (running / total) * 100;
