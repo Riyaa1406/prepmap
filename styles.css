@@ -1,0 +1,87 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  line-height: 1.5;
+  color: #222;
+  background: #f6f6f3;
+}
+
+header,
+main,
+footer {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+header h1 {
+  margin-bottom: 4px;
+}
+
+section {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+section h2 {
+  margin-top: 0;
+  font-size: 1.1rem;
+}
+
+/* Each label + field stacks vertically */
+form p,
+#filter-section p {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0 0 12px;
+}
+
+input,
+select,
+button {
+  font: inherit;
+  padding: 8px;
+}
+
+button {
+  cursor: pointer;
+}
+
+#question-list {
+  padding-left: 20px;
+}
+
+#question-list li {
+  margin-bottom: 6px;
+}
+
+/* Wider screens: two columns */
+@media (min-width: 800px) {
+  main {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    grid-template-areas:
+      "add list"
+      "filter list"
+      "stats stats";
+    gap: 16px;
+    align-items: start;
+  }
+
+  section {
+    margin-bottom: 0;
+  }
+
+  #add-section { grid-area: add; }
+  #filter-section { grid-area: filter; }
+  #list-section { grid-area: list; }
+  #stats-section { grid-area: stats; }
+}

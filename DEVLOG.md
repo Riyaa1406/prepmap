@@ -24,3 +24,7 @@
 - Did: created index.html with header, add-question form, filter section, question list area and stats area. No CSS or JavaScript yet.
 - What broke: nothing. The page opened in the browser and was readable without styling. Clicking a label focused its input, and empty required fields were blocked. [If something went wrong, write that instead.]
 - What I learned: labels linked with for and id make fields clickable and readable by screen readers, semantic tags like header, main and section describe the page structure, and the select dropdowns are left empty on purpose so JavaScript can fill them from data.js later.
+## Day 7: CSS layout
+- Did: created styles.css with a card layout, stacked form fields using flexbox, and a two-column grid on wide screens that stacks on phones.
+- What broke: nothing. [Edit if the layout looked wrong at any width.]
+- What I learned: flexbox lays out one line at a time, grid does rows and columns together, and mobile-first means the default styles are the phone layout, with a media query adding the wide-screen extras.
