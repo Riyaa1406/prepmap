@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PrepMap</title>
+</head>
+<body>
+  <header>
+    <h1>PrepMap</h1>
+    <p>See which topics carry the most marks in past papers.</p>
+  </header>
+
+  <main>
+    <section id="add-section">
+      <h2>Add a question</h2>
+      <form id="add-form">
+        <p>
+          <label for="subject">Subject</label>
+          <select id="subject" name="subject" required>
+            <option value="">Choose a subject</option>
+          </select>
+        </p>
+        <p>
+          <label for="topic">Topic</label>
+          <select id="topic" name="topic" required>
+            <option value="">Choose a topic</option>
+          </select>
+        </p>
+        <p>
+          <label for="title">Question (short, in your own words)</label>
+          <input id="title" name="title" type="text" required>
+        </p>
+        <p>
+          <label for="year">Year</label>
+          <input id="year" name="year" type="number" min="2000" max="2100" required>
+        </p>
+        <p>
+          <label for="marks">Marks</label>
+          <input id="marks" name="marks" type="number" min="1" max="100" required>
+        </p>
+        <button type="submit">Add question</button>
+      </form>
+    </section>
+
+    <section id="filter-section">
+      <h2>Filter questions</h2>
+      <p>
+        <label for="filter-subject">Subject</label>
+        <select id="filter-subject">
+          <option value="">All subjects</option>
+        </select>
+      </p>
+      <p>
+        <label for="filter-topic">Topic</label>
+        <select id="filter-topic">
+          <option value="">All topics</option>
+        </select>
+      </p>
+      <p>
+        <label for="filter-year">Year</label>
+        <select id="filter-year">
+          <option value="">All years</option>
+        </select>
+      </p>
+      <p>
+        <label for="filter-text">Search</label>
+        <input id="filter-text" type="search">
+      </p>
+    </section>
+
+    <section id="list-section">
+      <h2>Questions</h2>
+      <ul id="question-list">
+        <li>Questions will appear here.</li>
+      </ul>
+    </section>
+
+    <section id="stats-section">
+      <h2>Topic priority</h2>
+      <div id="stats">
+        <p>The priority list will appear here.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>PrepMap stores short question titles, years and marks, not copies of papers.</p>
+  </footer>
+</body>
+</html>

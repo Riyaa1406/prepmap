@@ -20,3 +20,7 @@
 - Did: added logic.test.js with 8 tests using hand-computed values, including empty input and ties; made tie-breaking explicit (lower topic id first).
 - What broke: nothing in the first run, all 8 tests passed. When I reversed the sort on purpose, [write which test(s) failed and what the message showed].
 - What I learned: a test calls a function with small data where I know the answer by hand and fails if the result differs. Edge cases like empty input and ties are where bugs hide, so they need their own tests. Tests let me change code later and see straight away if I broke something.
+## Day 6: HTML skeleton
+- Did: created index.html with header, add-question form, filter section, question list area and stats area. No CSS or JavaScript yet.
+- What broke: nothing. The page opened in the browser and was readable without styling. Clicking a label focused its input, and empty required fields were blocked. [If something went wrong, write that instead.]
+- What I learned: labels linked with for and id make fields clickable and readable by screen readers, semantic tags like header, main and section describe the page structure, and the select dropdowns are left empty on purpose so JavaScript can fill them from data.js later.
