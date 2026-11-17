@@ -28,3 +28,7 @@
 - Did: created styles.css with a card layout, stacked form fields using flexbox, and a two-column grid on wide screens that stacks on phones.
 - What broke: nothing. [Edit if the layout looked wrong at any width.]
 - What I learned: flexbox lays out one line at a time, grid does rows and columns together, and mobile-first means the default styles are the phone layout, with a media query adding the wide-screen extras.
+## Day 8: Render a list from data
+- Did: linked data.js and script.js, and rendered all 35 questions as list items with createElement. Made data.js safe to load in the browser.
+- What broke: module.exports doesn't exist in the browser, so data.js needed a typeof module check. [Edit if you saw a different error or none.]
+- What I learned: the DOM is the browser's live tree of the page, JavaScript changes that tree and not the HTML file, and textContent is safer than innerHTML because it never runs user text as code.

@@ -58,4 +58,6 @@ const questions = [
   { id: 35, subjectId: 1, topicId: 10, title: "Short note: file system in UNIX", year: 2025, marks: 5 },
 ];
 
-module.exports = { subjects, topics, questions };
+if (typeof module !== "undefined") {
+  module.exports = { subjects, topics, questions };
+}
