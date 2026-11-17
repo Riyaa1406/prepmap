@@ -32,3 +32,7 @@
 - Did: linked data.js and script.js, and rendered all 35 questions as list items with createElement. Made data.js safe to load in the browser.
 - What broke: module.exports doesn't exist in the browser, so data.js needed a typeof module check. [Edit if you saw a different error or none.]
 - What I learned: the DOM is the browser's live tree of the page, JavaScript changes that tree and not the HTML file, and textContent is safer than innerHTML because it never runs user text as code.
+## Day 9: The render pattern
+- Did: moved the data into a state object and wrote one render() function that redraws the question list and count from state.
+- What broke: nothing. The page only changed after I called render().
+- What I learned: change state first, then call render(), so the screen always matches the data.

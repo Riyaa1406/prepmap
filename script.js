@@ -1,17 +1,27 @@
-// Find the <ul> in the page
-const list = document.querySelector("#question-list");
+// The one place where the app's data lives
+const state = {
+  questions: [...questions],
+};
 
-// Look up a topic's name from its id
+const list = document.querySelector("#question-list");
+const countText = document.querySelector("#question-count");
+
 function topicName(topicId) {
   const topic = topics.find((t) => t.id === topicId);
   return topic ? topic.name : "Unknown topic";
 }
 
-// Remove the placeholder text, then add one <li> per question
-list.innerHTML = "";
+// Redraws the page from state. Call it after every change to state.
+function render() {
+  list.innerHTML = "";
 
-questions.forEach((q) => {
-  const li = document.createElement("li");
-  li.textContent = `${q.title} (${topicName(q.topicId)}, ${q.year}, ${q.marks} marks)`;
-  list.appendChild(li);
-});
+  state.questions.forEach((q) => {
+    const li = document.createElement("li");
+    li.textContent = `${q.title} (${topicName(q.topicId)}, ${q.year}, ${q.marks} marks)`;
+    list.appendChild(li);
+  });
+
+  countText.textContent = `${state.questions.length} questions`;
+}
+
+render();
