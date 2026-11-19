@@ -36,3 +36,7 @@
 - Did: moved the data into a state object and wrote one render() function that redraws the question list and count from state.
 - What broke: nothing. The page only changed after I called render().
 - What I learned: change state first, then call render(), so the screen always matches the data.
+## Day10: Events
+- Did: filled the subject and topic dropdowns from data.js, handled the form submit event, converted year and marks to numbers, added the question to state and re-rendered.
+- What broke: nothing. [Edit if the form reloaded the page or the dropdown stayed empty.]
+- What I learned: preventDefault stops the form from reloading the page and wiping state, and input values are always strings, so year and marks need Number() before they go into state.
