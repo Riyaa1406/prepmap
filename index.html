@@ -15,30 +15,35 @@
   <main>
     <section id="add-section">
       <h2>Add a question</h2>
-      <form id="add-form">
+            <form id="add-form" novalidate>
         <p>
           <label for="subject">Subject</label>
           <select id="subject" name="subject" required>
             <option value="">Choose a subject</option>
           </select>
+          <span class="error" id="error-subject" aria-live="polite"></span>
         </p>
         <p>
           <label for="topic">Topic</label>
           <select id="topic" name="topic" required>
             <option value="">Choose a topic</option>
           </select>
+          <span class="error" id="error-topic" aria-live="polite"></span>
         </p>
         <p>
           <label for="title">Question (short, in your own words)</label>
           <input id="title" name="title" type="text" required>
+          <span class="error" id="error-title" aria-live="polite"></span>
         </p>
         <p>
           <label for="year">Year</label>
           <input id="year" name="year" type="number" min="2000" max="2100" required>
+          <span class="error" id="error-year" aria-live="polite"></span>
         </p>
         <p>
           <label for="marks">Marks</label>
           <input id="marks" name="marks" type="number" min="1" max="100" required>
+          <span class="error" id="error-marks" aria-live="polite"></span>
         </p>
         <button type="submit">Add question</button>
       </form>

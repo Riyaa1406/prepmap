@@ -40,3 +40,7 @@
 - Did: filled the subject and topic dropdowns from data.js, handled the form submit event, converted year and marks to numbers, added the question to state and re-rendered.
 - What broke: nothing. [Edit if the form reloaded the page or the dropdown stayed empty.]
 - What I learned: preventDefault stops the form from reloading the page and wiping state, and input values are always strings, so year and marks need Number() before they go into state.
+## Day 11: Validation
+- Did: added validateQuestion with a message per field, showed errors next to the inputs, and turned off the browser's built-in checks with novalidate.
+- What broke: nothing. [Edit if one of the five bad inputs got through.]
+- What I learned: HTML attributes like required can be skipped or removed in DevTools, so JavaScript has to check the data itself, and validation should return one message per field and stop bad data before it reaches state.

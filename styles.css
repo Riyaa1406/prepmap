@@ -85,3 +85,11 @@ button {
   #list-section { grid-area: list; }
   #stats-section { grid-area: stats; }
 }
+.error {
+  color: #b00020;
+  font-size: 0.875rem;
+}
+
+.error:empty {
+  display: none;
+}

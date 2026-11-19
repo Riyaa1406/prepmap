@@ -13,7 +13,6 @@ function topicName(topicId) {
   return topic ? topic.name : "Unknown topic";
 }
 
-// Fill the subject dropdown from data.js
 function fillSubjects() {
   subjects.forEach((s) => {
     const option = document.createElement("option");
@@ -23,7 +22,6 @@ function fillSubjects() {
   });
 }
 
-// Fill the topic dropdown with only the chosen subject's topics
 function fillTopics() {
   topicSelect.innerHTML = '<option value="">Choose a topic</option>';
   const subjectId = Number(subjectSelect.value);
@@ -38,9 +36,37 @@ function fillTopics() {
     });
 }
 
-// The next unused id
 function nextId() {
   return Math.max(0, ...state.questions.map((q) => q.id)) + 1;
+}
+
+// Returns an object with one message per bad field. Empty object = valid.
+function validateQuestion(q) {
+  const errors = {};
+  const thisYear = new Date().getFullYear();
+
+  if (!q.subjectId) errors.subject = "Choose a subject.";
+  if (!q.topicId) errors.topic = "Choose a topic.";
+
+  if (q.title.length < 3) errors.title = "Write at least 3 characters.";
+  else if (q.title.length > 150) errors.title = "Keep it under 150 characters.";
+
+  if (!Number.isInteger(q.year) || q.year < 2000 || q.year > thisYear) {
+    errors.year = `Enter a year between 2000 and ${thisYear}.`;
+  }
+
+  if (!Number.isInteger(q.marks) || q.marks < 1 || q.marks > 100) {
+    errors.marks = "Enter whole marks from 1 to 100.";
+  }
+
+  return errors;
+}
+
+// Writes each message next to its field, and clears the rest
+function showErrors(errors) {
+  ["subject", "topic", "title", "year", "marks"].forEach((field) => {
+    document.querySelector(`#error-${field}`).textContent = errors[field] || "";
+  });
 }
 
 function render() {
@@ -68,6 +94,10 @@ form.addEventListener("submit", (event) => {
     year: Number(document.querySelector("#year").value),
     marks: Number(document.querySelector("#marks").value),
   };
+
+  const errors = validateQuestion(newQuestion);
+  showErrors(errors);
+  if (Object.keys(errors).length > 0) return;
 
   state.questions.push(newQuestion);
   form.reset();
