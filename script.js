@@ -1,6 +1,7 @@
 const state = {
   questions: [...questions],
   editingId: null, // id of the question being edited, or null
+  filters: { subjectId: 0, topicId: 0, year: 0, text: "" }, // 0 or "" means "no filter"
 };
 
 const list = document.querySelector("#question-list");
@@ -12,10 +13,17 @@ const cancelBtn = document.querySelector("#cancel-edit");
 const subjectSelect = document.querySelector("#subject");
 const topicSelect = document.querySelector("#topic");
 
+const filterSubject = document.querySelector("#filter-subject");
+const filterTopic = document.querySelector("#filter-topic");
+const filterYear = document.querySelector("#filter-year");
+const filterText = document.querySelector("#filter-text");
+
 function topicName(topicId) {
   const topic = topics.find((t) => t.id === topicId);
   return topic ? topic.name : "Unknown topic";
 }
+
+// ----- Add / edit form dropdowns -----
 
 function fillSubjects() {
   subjects.forEach((s) => {
@@ -39,6 +47,52 @@ function fillTopics() {
       topicSelect.appendChild(option);
     });
 }
+
+// ----- Filter dropdowns -----
+
+function fillFilterSubjects() {
+  subjects.forEach((s) => {
+    const option = document.createElement("option");
+    option.value = s.id;
+    option.textContent = s.name;
+    filterSubject.appendChild(option);
+  });
+}
+
+// Topics shown depend on the chosen subject filter
+function fillFilterTopics() {
+  filterTopic.innerHTML = '<option value="">All topics</option>';
+
+  topics
+    .filter((t) => !state.filters.subjectId || t.subjectId === state.filters.subjectId)
+    .forEach((t) => {
+      const option = document.createElement("option");
+      option.value = t.id;
+      option.textContent = t.name;
+      filterTopic.appendChild(option);
+    });
+
+  filterTopic.value = state.filters.topicId || "";
+}
+
+// Years come from the questions, so a new year appears automatically
+function fillFilterYears() {
+  const years = [...new Set(state.questions.map((q) => q.year))].sort((a, b) => b - a);
+
+  filterYear.innerHTML = '<option value="">All years</option>';
+  years.forEach((y) => {
+    const option = document.createElement("option");
+    option.value = y;
+    option.textContent = y;
+    filterYear.appendChild(option);
+  });
+
+  // If the chosen year no longer exists (all its questions were deleted), clear it
+  if (!years.includes(state.filters.year)) state.filters.year = 0;
+  filterYear.value = state.filters.year || "";
+}
+
+// ----- Data helpers -----
 
 function nextId() {
   return Math.max(0, ...state.questions.map((q) => q.id)) + 1;
@@ -71,10 +125,23 @@ function showErrors(errors) {
   });
 }
 
+// ----- Drawing the page -----
+
 function render() {
+  fillFilterYears();
+
+  // The same function from logic.js that the tests check
+  const visible = filterQuestions(state.questions, state.filters);
+
   list.innerHTML = "";
 
-  state.questions.forEach((q) => {
+  if (visible.length === 0) {
+    const li = document.createElement("li");
+    li.textContent = "No questions match these filters.";
+    list.appendChild(li);
+  }
+
+  visible.forEach((q) => {
     const li = document.createElement("li");
 
     const text = document.createElement("span");
@@ -90,10 +157,11 @@ function render() {
     list.appendChild(li);
   });
 
-  countText.textContent = `${state.questions.length} questions`;
+  countText.textContent = `Showing ${visible.length} of ${state.questions.length} questions`;
 }
 
-// Back to normal "add" mode
+// ----- Edit and delete -----
+
 function exitEditMode() {
   state.editingId = null;
   form.reset();
@@ -104,7 +172,6 @@ function exitEditMode() {
   cancelBtn.hidden = true;
 }
 
-// Fill the form with a question and switch to "edit" mode
 function startEdit(id) {
   const q = state.questions.find((item) => item.id === id);
   if (!q) return;
@@ -132,7 +199,8 @@ function deleteQuestion(id) {
   render();
 }
 
-// One listener on the list handles every Edit and Delete button
+// ----- Events -----
+
 list.addEventListener("click", (event) => {
   const button = event.target.closest("button[data-action]");
   if (!button) return;
@@ -144,6 +212,28 @@ list.addEventListener("click", (event) => {
 
 cancelBtn.addEventListener("click", exitEditMode);
 subjectSelect.addEventListener("change", fillTopics);
+
+filterSubject.addEventListener("change", () => {
+  state.filters.subjectId = Number(filterSubject.value);
+  state.filters.topicId = 0; // the old topic may not belong to the new subject
+  fillFilterTopics();
+  render();
+});
+
+filterTopic.addEventListener("change", () => {
+  state.filters.topicId = Number(filterTopic.value);
+  render();
+});
+
+filterYear.addEventListener("change", () => {
+  state.filters.year = Number(filterYear.value);
+  render();
+});
+
+filterText.addEventListener("input", () => {
+  state.filters.text = filterText.value;
+  render();
+});
 
 form.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -175,6 +265,10 @@ form.addEventListener("submit", (event) => {
   render();
 });
 
+// ----- Start -----
+
 fillSubjects();
 fillTopics();
+fillFilterSubjects();
+fillFilterTopics();
 render();

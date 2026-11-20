@@ -1,5 +1,3 @@
-const { topics, questions } = require("./data");
-
 // How many questions does each topic have?
 function countByTopic(questions) {
   return questions.reduce((counts, q) => {
@@ -46,10 +44,15 @@ function filterQuestions(questions, filters = {}) {
   );
 }
 
-module.exports = { countByTopic, marksByTopic, priorityList, filterQuestions };
+// Export only when running in Node (tests use this)
+if (typeof module !== "undefined") {
+  module.exports = { countByTopic, marksByTopic, priorityList, filterQuestions };
+}
 
 // Runs only when you type: node logic.js
-if (require.main === module) {
+if (typeof require !== "undefined" && require.main === module) {
+  const { topics, questions } = require("./data");
+
   console.log("Priority list:");
   priorityList(topics, questions).forEach((t, i) => {
     console.log(i + 1 + ".", t.name, "|", t.marks, "marks |", t.cumulativePercent + "%");
