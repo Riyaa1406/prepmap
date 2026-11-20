@@ -93,3 +93,27 @@ button {
 .error:empty {
   display: none;
 }
+#question-list {
+  list-style: none;
+  padding-left: 0;
+}
+
+#question-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.actions button {
+  padding: 4px 8px;
+  font-size: 0.85rem;
+}

@@ -1,10 +1,14 @@
 const state = {
   questions: [...questions],
+  editingId: null, // id of the question being edited, or null
 };
 
 const list = document.querySelector("#question-list");
 const countText = document.querySelector("#question-count");
 const form = document.querySelector("#add-form");
+const formTitle = document.querySelector("#form-title");
+const submitBtn = document.querySelector("#submit-btn");
+const cancelBtn = document.querySelector("#cancel-edit");
 const subjectSelect = document.querySelector("#subject");
 const topicSelect = document.querySelector("#topic");
 
@@ -40,7 +44,6 @@ function nextId() {
   return Math.max(0, ...state.questions.map((q) => q.id)) + 1;
 }
 
-// Returns an object with one message per bad field. Empty object = valid.
 function validateQuestion(q) {
   const errors = {};
   const thisYear = new Date().getFullYear();
@@ -62,7 +65,6 @@ function validateQuestion(q) {
   return errors;
 }
 
-// Writes each message next to its field, and clears the rest
 function showErrors(errors) {
   ["subject", "topic", "title", "year", "marks"].forEach((field) => {
     document.querySelector(`#error-${field}`).textContent = errors[field] || "";
@@ -74,20 +76,82 @@ function render() {
 
   state.questions.forEach((q) => {
     const li = document.createElement("li");
-    li.textContent = `${q.title} (${topicName(q.topicId)}, ${q.year}, ${q.marks} marks)`;
+
+    const text = document.createElement("span");
+    text.textContent = `${q.title} (${topicName(q.topicId)}, ${q.year}, ${q.marks} marks)`;
+
+    const actions = document.createElement("span");
+    actions.className = "actions";
+    actions.innerHTML =
+      `<button type="button" data-action="edit" data-id="${q.id}">Edit</button>` +
+      `<button type="button" data-action="delete" data-id="${q.id}">Delete</button>`;
+
+    li.append(text, actions);
     list.appendChild(li);
   });
 
   countText.textContent = `${state.questions.length} questions`;
 }
 
+// Back to normal "add" mode
+function exitEditMode() {
+  state.editingId = null;
+  form.reset();
+  fillTopics();
+  showErrors({});
+  formTitle.textContent = "Add a question";
+  submitBtn.textContent = "Add question";
+  cancelBtn.hidden = true;
+}
+
+// Fill the form with a question and switch to "edit" mode
+function startEdit(id) {
+  const q = state.questions.find((item) => item.id === id);
+  if (!q) return;
+
+  state.editingId = id;
+  subjectSelect.value = q.subjectId;
+  fillTopics();
+  topicSelect.value = q.topicId;
+  document.querySelector("#title").value = q.title;
+  document.querySelector("#year").value = q.year;
+  document.querySelector("#marks").value = q.marks;
+
+  showErrors({});
+  formTitle.textContent = "Edit question";
+  submitBtn.textContent = "Save changes";
+  cancelBtn.hidden = false;
+  form.scrollIntoView({ behavior: "smooth" });
+}
+
+function deleteQuestion(id) {
+  if (!confirm("Delete this question?")) return;
+
+  state.questions = state.questions.filter((q) => q.id !== id);
+  if (state.editingId === id) exitEditMode();
+  render();
+}
+
+// One listener on the list handles every Edit and Delete button
+list.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-action]");
+  if (!button) return;
+
+  const id = Number(button.dataset.id);
+  if (button.dataset.action === "edit") startEdit(id);
+  if (button.dataset.action === "delete") deleteQuestion(id);
+});
+
+cancelBtn.addEventListener("click", exitEditMode);
 subjectSelect.addEventListener("change", fillTopics);
 
 form.addEventListener("submit", (event) => {
   event.preventDefault();
 
+  const isEditing = state.editingId !== null;
+
   const newQuestion = {
-    id: nextId(),
+    id: isEditing ? state.editingId : nextId(),
     subjectId: Number(subjectSelect.value),
     topicId: Number(topicSelect.value),
     title: document.querySelector("#title").value.trim(),
@@ -99,9 +163,15 @@ form.addEventListener("submit", (event) => {
   showErrors(errors);
   if (Object.keys(errors).length > 0) return;
 
-  state.questions.push(newQuestion);
-  form.reset();
-  fillTopics();
+  if (isEditing) {
+    state.questions = state.questions.map((q) =>
+      q.id === newQuestion.id ? newQuestion : q
+    );
+  } else {
+    state.questions.push(newQuestion);
+  }
+
+  exitEditMode();
   render();
 });
 

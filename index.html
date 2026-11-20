@@ -14,7 +14,7 @@
 
   <main>
     <section id="add-section">
-      <h2>Add a question</h2>
+      <h2 id="form-title">Add a question</h2>
             <form id="add-form" novalidate>
         <p>
           <label for="subject">Subject</label>
@@ -45,7 +45,8 @@
           <input id="marks" name="marks" type="number" min="1" max="100" required>
           <span class="error" id="error-marks" aria-live="polite"></span>
         </p>
-        <button type="submit">Add question</button>
+        <button type="submit" id="submit-btn">Add question</button>
+        <button type="button" id="cancel-edit" hidden>Cancel</button>
       </form>
     </section>
 
