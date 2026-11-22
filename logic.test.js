@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert");
-const { countByTopic, marksByTopic, priorityList, filterQuestions } = require("./logic");
+const { countByTopic, marksByTopic, priorityList, markCore, filterQuestions } = require("./logic");
 
 // Small data, so every answer can be worked out by hand.
 const topics = [
@@ -64,4 +64,18 @@ test("filterQuestions combines filters, and no filters returns all", () => {
 test("filterQuestions text search ignores case, and no match gives empty list", () => {
   assert.deepStrictEqual(filterQuestions(questions, { text: "DISK" }).map((q) => q.id), [1]);
   assert.deepStrictEqual(filterQuestions(questions, { text: "zzz" }), []);
+});
+test("markCore stops once the running total reaches the threshold exactly", () => {
+  const list = [{ marks: 30 }, { marks: 30 }, { marks: 40 }];
+  assert.deepStrictEqual(markCore(list).map((t) => t.core), [true, true, false]);
+});
+
+test("markCore includes the topic that crosses the threshold", () => {
+  const list = [{ marks: 50 }, { marks: 30 }, { marks: 20 }];
+  assert.deepStrictEqual(markCore(list).map((t) => t.core), [true, true, false]);
+});
+
+test("markCore with no marks marks nothing", () => {
+  const list = [{ marks: 0 }, { marks: 0 }];
+  assert.deepStrictEqual(markCore(list).map((t) => t.core), [false, false]);
 });

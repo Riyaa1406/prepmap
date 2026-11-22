@@ -30,6 +30,20 @@ function priorityList(topics, questions) {
     });
 }
 
+// Marks which topics make up the first `threshold` percent of all marks.
+// A topic counts if the marks BEFORE it have not reached the threshold yet,
+// so the topic that crosses the line is included.
+function markCore(list, threshold = 60) {
+  const total = list.reduce((sum, t) => sum + t.marks, 0);
+  let before = 0;
+
+  return list.map((t) => {
+    const core = total > 0 && before * 100 < threshold * total;
+    before += t.marks;
+    return { ...t, core };
+  });
+}
+
 // Keep only the questions that match every filter that was given
 function filterQuestions(questions, filters = {}) {
   const { subjectId, topicId, year, text } = filters;
@@ -46,7 +60,7 @@ function filterQuestions(questions, filters = {}) {
 
 // Export only when running in Node (tests use this)
 if (typeof module !== "undefined") {
-  module.exports = { countByTopic, marksByTopic, priorityList, filterQuestions };
+    module.exports = { countByTopic, marksByTopic, priorityList, markCore, filterQuestions };
 }
 
 // Runs only when you type: node logic.js

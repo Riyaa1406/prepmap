@@ -150,3 +150,28 @@ button {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
+.table-wrap {
+  overflow-x: auto;
+}
+
+#stats table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+#stats th,
+#stats td {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid #eee;
+}
+
+#stats .num {
+  text-align: right;
+}
+
+#stats tr.core {
+  background: #e6f2ea;
+  font-weight: 600;
+}

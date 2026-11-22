@@ -64,3 +64,8 @@
 - Did: drew a CSS-only horizontal bar chart of questions per topic, using countByTopic from logic.js, redrawn on every render.
 - What broke: nothing. The bars matched my Day 3 counts, and they shrank and grew when I deleted and added questions.
 - What I learned: each bar's width is the topic's count as a percentage of the largest count, and the number is printed beside the bar so the chart doesn't rely on length alone.
+
+## Day 15: Priority view
+- Did: added markCore to logic.js (with 3 tests), and a ranked table that highlights the topics covering the first 60% of marks, redrawn on every render.
+- What broke: nothing. On the real data, the first four topics (29 + 22 + 21 + 15 = 87 of 145) are highlighted, which matched my hand calculation.
+- What I learned: a topic counts as core if the marks before it haven't reached 60% yet, so the topic that crosses the line is included. The rule lives in logic.js and is tested, and the page only displays it.

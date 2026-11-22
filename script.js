@@ -18,6 +18,7 @@ const filterTopic = document.querySelector("#filter-topic");
 const filterYear = document.querySelector("#filter-year");
 const filterText = document.querySelector("#filter-text");
 const chart = document.querySelector("#chart");
+const stats = document.querySelector("#stats");
 
 function topicName(topicId) {
   const topic = topics.find((t) => t.id === topicId);
@@ -157,6 +158,54 @@ function renderChart() {
     chart.appendChild(row);
   });
 }
+// Ranked table. Topics in the first 60% of marks are highlighted.
+function renderPriority() {
+  const ranked = markCore(priorityList(topics, state.questions), 60);
+  const totalMarks = state.questions.reduce((sum, q) => sum + q.marks, 0);
+  const coreCount = ranked.filter((t) => t.core).length;
+
+  stats.innerHTML = "";
+
+  const note = document.createElement("p");
+  if (totalMarks === 0) {
+    note.textContent = "No questions yet.";
+    stats.appendChild(note);
+    return;
+  }
+  note.textContent = `${coreCount} of ${ranked.length} topics cover the first 60% of the ${totalMarks} marks. Study these first.`;
+  stats.appendChild(note);
+
+  const wrap = document.createElement("div");
+  wrap.className = "table-wrap";
+  const table = document.createElement("table");
+
+  const head = document.createElement("tr");
+  ["#", "Topic", "Marks", "Cumulative %", ""].forEach((text, i) => {
+    const th = document.createElement("th");
+    th.textContent = text;
+    if (i === 2 || i === 3) th.className = "num";
+    head.appendChild(th);
+  });
+  table.appendChild(head);
+
+  ranked.forEach((t, i) => {
+    const tr = document.createElement("tr");
+    if (t.core) tr.className = "core";
+
+    const cells = [i + 1, t.name, t.marks, `${t.cumulativePercent}%`, t.core ? "Study first" : ""];
+    cells.forEach((value, col) => {
+      const td = document.createElement("td");
+      td.textContent = value;
+      if (col === 2 || col === 3) td.className = "num";
+      tr.appendChild(td);
+    });
+
+    table.appendChild(tr);
+  });
+
+  wrap.appendChild(table);
+  stats.appendChild(wrap);
+}
 // ----- Drawing the page -----
 
 function render() {
@@ -191,6 +240,7 @@ function render() {
 
   countText.textContent = `Showing ${visible.length} of ${state.questions.length} questions`;
   renderChart();
+  renderPriority();
 }
 
 // ----- Edit and delete -----
