@@ -117,3 +117,36 @@ button {
   padding: 4px 8px;
   font-size: 0.85rem;
 }
+#stats-section h3 {
+  font-size: 1rem;
+  margin: 0 0 8px;
+}
+
+.bar-row {
+  display: grid;
+  grid-template-columns: minmax(110px, 1.2fr) 2fr 2rem;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 0.9rem;
+}
+
+.bar-track {
+  display: block;
+  height: 14px;
+  background: #eee;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  display: block;
+  height: 100%;
+  background: #2f6f4f;
+  border-radius: 4px;
+}
+
+.bar-count {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}

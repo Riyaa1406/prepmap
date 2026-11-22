@@ -59,3 +59,8 @@
 - Did: gave every question a Delete and an Edit button that find the question by its id; edit mode refills the form and saves changes in place; Cancel and delete-while-editing return to add mode.
 - What broke: nothing.
 - What I learned: I use the id, not the array position, because positions shift after a delete. One click listener on the list handles all buttons, and filter and map return new arrays that I assign back to state before calling render().
+
+## Day 14: Topic frequency chart
+- Did: drew a CSS-only horizontal bar chart of questions per topic, using countByTopic from logic.js, redrawn on every render.
+- What broke: nothing. The bars matched my Day 3 counts, and they shrank and grew when I deleted and added questions.
+- What I learned: each bar's width is the topic's count as a percentage of the largest count, and the number is printed beside the bar so the chart doesn't rely on length alone.

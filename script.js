@@ -17,6 +17,7 @@ const filterSubject = document.querySelector("#filter-subject");
 const filterTopic = document.querySelector("#filter-topic");
 const filterYear = document.querySelector("#filter-year");
 const filterText = document.querySelector("#filter-text");
+const chart = document.querySelector("#chart");
 
 function topicName(topicId) {
   const topic = topics.find((t) => t.id === topicId);
@@ -124,7 +125,38 @@ function showErrors(errors) {
     document.querySelector(`#error-${field}`).textContent = errors[field] || "";
   });
 }
+// One bar per topic. Width = this topic's count as a share of the biggest count.
+function renderChart() {
+  const counts = countByTopic(state.questions);
+  const max = Math.max(1, ...Object.values(counts));
 
+  chart.innerHTML = "";
+
+  topics.forEach((t) => {
+    const count = counts[t.id] || 0;
+
+    const row = document.createElement("div");
+    row.className = "bar-row";
+
+    const label = document.createElement("span");
+    label.textContent = t.name;
+
+    const track = document.createElement("span");
+    track.className = "bar-track";
+
+    const fill = document.createElement("span");
+    fill.className = "bar-fill";
+    fill.style.width = `${(count / max) * 100}%`;
+    track.appendChild(fill);
+
+    const number = document.createElement("span");
+    number.className = "bar-count";
+    number.textContent = count;
+
+    row.append(label, track, number);
+    chart.appendChild(row);
+  });
+}
 // ----- Drawing the page -----
 
 function render() {
@@ -158,6 +190,7 @@ function render() {
   });
 
   countText.textContent = `Showing ${visible.length} of ${state.questions.length} questions`;
+  renderChart();
 }
 
 // ----- Edit and delete -----
