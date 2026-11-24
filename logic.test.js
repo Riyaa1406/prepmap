@@ -1,7 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert");
-const { countByTopic, marksByTopic, priorityList, markCore, filterQuestions } = require("./logic");
-
+const { countByTopic, marksByTopic, priorityList, markCore, filterQuestions, parseSavedQuestions } = require("./logic");
 // Small data, so every answer can be worked out by hand.
 const topics = [
   { id: 1, name: "A" },
@@ -65,6 +64,7 @@ test("filterQuestions text search ignores case, and no match gives empty list", 
   assert.deepStrictEqual(filterQuestions(questions, { text: "DISK" }).map((q) => q.id), [1]);
   assert.deepStrictEqual(filterQuestions(questions, { text: "zzz" }), []);
 });
+
 test("markCore stops once the running total reaches the threshold exactly", () => {
   const list = [{ marks: 30 }, { marks: 30 }, { marks: 40 }];
   assert.deepStrictEqual(markCore(list).map((t) => t.core), [true, true, false]);
@@ -78,4 +78,38 @@ test("markCore includes the topic that crosses the threshold", () => {
 test("markCore with no marks marks nothing", () => {
   const list = [{ marks: 0 }, { marks: 0 }];
   assert.deepStrictEqual(markCore(list).map((t) => t.core), [false, false]);
+});
+
+test("marksByTopic adds half marks exactly", () => {
+  const q = [
+    { topicId: 1, marks: 6.5 },
+    { topicId: 1, marks: 6 },
+    { topicId: 1, marks: 6.5 },
+  ];
+  assert.deepStrictEqual(marksByTopic(q), { 1: 19 });
+});
+const goodQuestion = { id: 1, subjectId: 1, topicId: 1, title: "x", year: 2024, marks: 6.5 };
+
+test("parseSavedQuestions returns the array for valid saved text", () => {
+  const result = parseSavedQuestions(JSON.stringify([goodQuestion]));
+  assert.deepStrictEqual(result, [goodQuestion]);
+});
+
+test("parseSavedQuestions returns null for broken text", () => {
+  assert.strictEqual(parseSavedQuestions("{broken"), null);
+});
+
+test("parseSavedQuestions returns null when nothing was saved", () => {
+  assert.strictEqual(parseSavedQuestions(null), null);
+});
+
+test("parseSavedQuestions rejects a missing field or odd marks", () => {
+  const noTitle = { ...goodQuestion, title: undefined };
+  const oddMarks = { ...goodQuestion, marks: 6.3 };
+  assert.strictEqual(parseSavedQuestions(JSON.stringify([noTitle])), null);
+  assert.strictEqual(parseSavedQuestions(JSON.stringify([oddMarks])), null);
+});
+
+test("parseSavedQuestions keeps an empty saved list as empty, not as missing", () => {
+  assert.deepStrictEqual(parseSavedQuestions("[]"), []);
 });

@@ -1,7 +1,30 @@
+const STORAGE_KEY = "prepmap-questions-v1";
+
+// Saved questions if there are valid ones, otherwise the sample data from data.js
+function loadQuestions() {
+  try {
+    const saved = parseSavedQuestions(localStorage.getItem(STORAGE_KEY));
+    if (saved) return saved;
+  } catch (error) {
+    // localStorage can be blocked by browser settings. Fall through to sample data.
+  }
+  return [...questions];
+}
+
+// Write the current questions to the browser's storage
+function saveQuestions() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state.questions));
+  } catch (error) {
+    // Storage full or blocked. The app keeps working, it just won't remember.
+  }
+}
+
 const state = {
-  questions: [...questions],
+  questions: loadQuestions(),
   editingId: null, // id of the question being edited, or null
   filters: { subjectId: 0, topicId: 0, year: 0, text: "" }, // 0 or "" means "no filter"
+  statsSubjectId: subjects[0].id, // which subject the chart and priority table show
 };
 
 const list = document.querySelector("#question-list");
@@ -10,6 +33,7 @@ const form = document.querySelector("#add-form");
 const formTitle = document.querySelector("#form-title");
 const submitBtn = document.querySelector("#submit-btn");
 const cancelBtn = document.querySelector("#cancel-edit");
+const resetBtn = document.querySelector("#reset-data");
 const subjectSelect = document.querySelector("#subject");
 const topicSelect = document.querySelector("#topic");
 
@@ -17,8 +41,10 @@ const filterSubject = document.querySelector("#filter-subject");
 const filterTopic = document.querySelector("#filter-topic");
 const filterYear = document.querySelector("#filter-year");
 const filterText = document.querySelector("#filter-text");
+
 const chart = document.querySelector("#chart");
 const stats = document.querySelector("#stats");
+const statsSubject = document.querySelector("#stats-subject");
 
 function topicName(topicId) {
   const topic = topics.find((t) => t.id === topicId);
@@ -61,7 +87,6 @@ function fillFilterSubjects() {
   });
 }
 
-// Topics shown depend on the chosen subject filter
 function fillFilterTopics() {
   filterTopic.innerHTML = '<option value="">All topics</option>';
 
@@ -77,7 +102,6 @@ function fillFilterTopics() {
   filterTopic.value = state.filters.topicId || "";
 }
 
-// Years come from the questions, so a new year appears automatically
 function fillFilterYears() {
   const years = [...new Set(state.questions.map((q) => q.year))].sort((a, b) => b - a);
 
@@ -89,9 +113,29 @@ function fillFilterYears() {
     filterYear.appendChild(option);
   });
 
-  // If the chosen year no longer exists (all its questions were deleted), clear it
   if (!years.includes(state.filters.year)) state.filters.year = 0;
   filterYear.value = state.filters.year || "";
+}
+
+// ----- Stats subject dropdown -----
+
+function fillStatsSubjects() {
+  subjects.forEach((s) => {
+    const option = document.createElement("option");
+    option.value = s.id;
+    option.textContent = s.name;
+    statsSubject.appendChild(option);
+  });
+  statsSubject.value = state.statsSubjectId;
+}
+
+// The chart and priority table always cover ONE subject,
+// so percentages never mix marks from different subjects.
+function statsData() {
+  return {
+    topics: topics.filter((t) => t.subjectId === state.statsSubjectId),
+    questions: state.questions.filter((q) => q.subjectId === state.statsSubjectId),
+  };
 }
 
 // ----- Data helpers -----
@@ -114,8 +158,9 @@ function validateQuestion(q) {
     errors.year = `Enter a year between 2000 and ${thisYear}.`;
   }
 
-  if (!Number.isInteger(q.marks) || q.marks < 1 || q.marks > 100) {
-    errors.marks = "Enter whole marks from 1 to 100.";
+  // Half marks are allowed (6.5), nothing finer
+  if (!(q.marks >= 0.5 && q.marks <= 100) || !Number.isInteger(q.marks * 2)) {
+    errors.marks = "Enter marks from 0.5 to 100, in steps of 0.5.";
   }
 
   return errors;
@@ -126,14 +171,18 @@ function showErrors(errors) {
     document.querySelector(`#error-${field}`).textContent = errors[field] || "";
   });
 }
+
+// ----- Drawing the page -----
+
 // One bar per topic. Width = this topic's count as a share of the biggest count.
 function renderChart() {
-  const counts = countByTopic(state.questions);
+  const data = statsData();
+  const counts = countByTopic(data.questions);
   const max = Math.max(1, ...Object.values(counts));
 
   chart.innerHTML = "";
 
-  topics.forEach((t) => {
+  data.topics.forEach((t) => {
     const count = counts[t.id] || 0;
 
     const row = document.createElement("div");
@@ -158,17 +207,19 @@ function renderChart() {
     chart.appendChild(row);
   });
 }
+
 // Ranked table. Topics in the first 60% of marks are highlighted.
 function renderPriority() {
-  const ranked = markCore(priorityList(topics, state.questions), 60);
-  const totalMarks = state.questions.reduce((sum, q) => sum + q.marks, 0);
+  const data = statsData();
+  const ranked = markCore(priorityList(data.topics, data.questions), 60);
+  const totalMarks = data.questions.reduce((sum, q) => sum + q.marks, 0);
   const coreCount = ranked.filter((t) => t.core).length;
 
   stats.innerHTML = "";
 
   const note = document.createElement("p");
   if (totalMarks === 0) {
-    note.textContent = "No questions yet.";
+    note.textContent = "No questions yet for this subject.";
     stats.appendChild(note);
     return;
   }
@@ -206,12 +257,10 @@ function renderPriority() {
   wrap.appendChild(table);
   stats.appendChild(wrap);
 }
-// ----- Drawing the page -----
 
 function render() {
   fillFilterYears();
 
-  // The same function from logic.js that the tests check
   const visible = filterQuestions(state.questions, state.filters);
 
   list.innerHTML = "";
@@ -279,6 +328,7 @@ function deleteQuestion(id) {
 
   state.questions = state.questions.filter((q) => q.id !== id);
   if (state.editingId === id) exitEditMode();
+  saveQuestions();
   render();
 }
 
@@ -296,9 +346,22 @@ list.addEventListener("click", (event) => {
 cancelBtn.addEventListener("click", exitEditMode);
 subjectSelect.addEventListener("change", fillTopics);
 
+resetBtn.addEventListener("click", () => {
+  if (!confirm("Replace all your questions with the original sample data? Your changes will be lost.")) return;
+
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch (error) {
+    // Nothing to clear if storage is blocked
+  }
+  state.questions = [...questions];
+  exitEditMode();
+  render();
+});
+
 filterSubject.addEventListener("change", () => {
   state.filters.subjectId = Number(filterSubject.value);
-  state.filters.topicId = 0; // the old topic may not belong to the new subject
+  state.filters.topicId = 0;
   fillFilterTopics();
   render();
 });
@@ -315,6 +378,11 @@ filterYear.addEventListener("change", () => {
 
 filterText.addEventListener("input", () => {
   state.filters.text = filterText.value;
+  render();
+});
+
+statsSubject.addEventListener("change", () => {
+  state.statsSubjectId = Number(statsSubject.value);
   render();
 });
 
@@ -344,6 +412,7 @@ form.addEventListener("submit", (event) => {
     state.questions.push(newQuestion);
   }
 
+  saveQuestions();
   exitEditMode();
   render();
 });
@@ -354,4 +423,5 @@ fillSubjects();
 fillTopics();
 fillFilterSubjects();
 fillFilterTopics();
+fillStatsSubjects();
 render();

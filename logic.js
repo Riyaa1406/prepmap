@@ -58,9 +58,42 @@ function filterQuestions(questions, filters = {}) {
   );
 }
 
+// Turns saved text back into a questions array.
+// Returns null if nothing was saved, the text is broken, or the shape is wrong.
+function parseSavedQuestions(text) {
+  try {
+    const data = JSON.parse(text);
+    if (!Array.isArray(data)) return null;
+
+    const valid = data.every(
+      (q) =>
+        q &&
+        Number.isInteger(q.id) &&
+        Number.isInteger(q.subjectId) &&
+        Number.isInteger(q.topicId) &&
+        typeof q.title === "string" &&
+        Number.isInteger(q.year) &&
+        typeof q.marks === "number" &&
+        q.marks > 0 &&
+        Number.isInteger(q.marks * 2)
+    );
+
+    return valid ? data : null;
+  } catch (error) {
+    return null;
+  }
+}
+
 // Export only when running in Node (tests use this)
 if (typeof module !== "undefined") {
-    module.exports = { countByTopic, marksByTopic, priorityList, markCore, filterQuestions };
+  module.exports = {
+    countByTopic,
+    marksByTopic,
+    priorityList,
+    markCore,
+    filterQuestions,
+    parseSavedQuestions,
+  };
 }
 
 // Runs only when you type: node logic.js

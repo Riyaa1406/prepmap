@@ -69,3 +69,8 @@
 - Did: added markCore to logic.js (with 3 tests), and a ranked table that highlights the topics covering the first 60% of marks, redrawn on every render.
 - What broke: nothing. On the real data, the first four topics (29 + 22 + 21 + 15 = 87 of 145) are highlighted, which matched my hand calculation.
 - What I learned: a topic counts as core if the marks before it haven't reached 60% yet, so the topic that crosses the line is included. The rule lives in logic.js and is tested, and the page only displays it.
+
+## Day 16: Save data
+- Did: saved the questions in localStorage after every add, edit and delete, loaded them on start, and added parseSavedQuestions (with 5 tests) that checks saved data before the app trusts it. Added a reset button.
+- What broke: nothing.
+- What I learned: localStorage keeps only text, so I convert with JSON.stringify and JSON.parse. Saved data can be missing, broken or edited by the user, so it gets validated and the app falls back to the sample data. Storage belongs to one browser and one address, and it has a size limit.
