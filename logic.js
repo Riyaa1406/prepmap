@@ -58,30 +58,72 @@ function filterQuestions(questions, filters = {}) {
   );
 }
 
+// Does one question have every field, with the right types?
+function hasValidShape(q) {
+  return (
+    Boolean(q) &&
+    Number.isInteger(q.id) &&
+    Number.isInteger(q.subjectId) &&
+    Number.isInteger(q.topicId) &&
+    typeof q.title === "string" &&
+    Number.isInteger(q.year) &&
+    typeof q.marks === "number" &&
+    q.marks > 0 &&
+    Number.isInteger(q.marks * 2)
+  );
+}
+
 // Turns saved text back into a questions array.
 // Returns null if nothing was saved, the text is broken, or the shape is wrong.
 function parseSavedQuestions(text) {
   try {
     const data = JSON.parse(text);
     if (!Array.isArray(data)) return null;
-
-    const valid = data.every(
-      (q) =>
-        q &&
-        Number.isInteger(q.id) &&
-        Number.isInteger(q.subjectId) &&
-        Number.isInteger(q.topicId) &&
-        typeof q.title === "string" &&
-        Number.isInteger(q.year) &&
-        typeof q.marks === "number" &&
-        q.marks > 0 &&
-        Number.isInteger(q.marks * 2)
-    );
-
-    return valid ? data : null;
+    return data.every(hasValidShape) ? data : null;
   } catch (error) {
     return null;
   }
+}
+
+// Checks the text of an imported file against our own data.
+// Returns { ok: true, questions } or { ok: false, error: "message" }.
+function parseImport(text, topics) {
+  const fail = (error) => ({ ok: false, error });
+
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch (error) {
+    return fail("this file isn’t valid JSON.");
+  }
+
+  if (!data || data.app !== "prepmap" || !Array.isArray(data.questions)) {
+    return fail("this isn’t a PrepMap backup file.");
+  }
+
+  const questions = data.questions;
+  if (questions.length === 0) return fail("the file has no questions.");
+  if (!questions.every(hasValidShape)) {
+    return fail("some questions are missing fields or have the wrong type of value.");
+  }
+
+  const seen = new Set();
+  for (const q of questions) {
+    if (seen.has(q.id)) return fail(`two questions share the id ${q.id}.`);
+    seen.add(q.id);
+
+    if (q.title.trim().length < 3) return fail(`question ${q.id} has no usable title.`);
+    if (q.year < 2000 || q.year > 2100) return fail(`question ${q.id} has an unreasonable year.`);
+    if (q.marks > 100) return fail(`question ${q.id} has more than 100 marks.`);
+
+    const topic = topics.find((t) => t.id === q.topicId);
+    if (!topic) return fail(`question ${q.id} points to a topic that doesn’t exist.`);
+    if (topic.subjectId !== q.subjectId) {
+      return fail(`question ${q.id}: its topic doesn’t belong to its subject.`);
+    }
+  }
+
+  return { ok: true, questions };
 }
 
 // Export only when running in Node (tests use this)
@@ -93,6 +135,7 @@ if (typeof module !== "undefined") {
     markCore,
     filterQuestions,
     parseSavedQuestions,
+    parseImport,
   };
 }
 

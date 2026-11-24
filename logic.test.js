@@ -1,6 +1,15 @@
 const test = require("node:test");
 const assert = require("node:assert");
-const { countByTopic, marksByTopic, priorityList, markCore, filterQuestions, parseSavedQuestions } = require("./logic");
+const {
+  countByTopic,
+  marksByTopic,
+  priorityList,
+  markCore,
+  filterQuestions,
+  parseSavedQuestions,
+  parseImport,
+} = require("./logic");
+
 // Small data, so every answer can be worked out by hand.
 const topics = [
   { id: 1, name: "A" },
@@ -88,6 +97,7 @@ test("marksByTopic adds half marks exactly", () => {
   ];
   assert.deepStrictEqual(marksByTopic(q), { 1: 19 });
 });
+
 const goodQuestion = { id: 1, subjectId: 1, topicId: 1, title: "x", year: 2024, marks: 6.5 };
 
 test("parseSavedQuestions returns the array for valid saved text", () => {
@@ -112,4 +122,46 @@ test("parseSavedQuestions rejects a missing field or odd marks", () => {
 
 test("parseSavedQuestions keeps an empty saved list as empty, not as missing", () => {
   assert.deepStrictEqual(parseSavedQuestions("[]"), []);
+});
+
+// ----- Day 17: importing a file -----
+
+const importTopics = [
+  { id: 1, subjectId: 1 },
+  { id: 2, subjectId: 2 },
+];
+const importQ = { id: 1, subjectId: 1, topicId: 1, title: "Valid title", year: 2024, marks: 6 };
+const wrap = (qs) => JSON.stringify({ app: "prepmap", version: 1, questions: qs });
+
+test("parseImport accepts a valid backup and returns its questions", () => {
+  const result = parseImport(wrap([importQ]), importTopics);
+  assert.strictEqual(result.ok, true);
+  assert.deepStrictEqual(result.questions, [importQ]);
+});
+
+test("parseImport rejects broken text and files without the PrepMap marker", () => {
+  assert.strictEqual(parseImport("{broken", importTopics).ok, false);
+  assert.strictEqual(parseImport(JSON.stringify([importQ]), importTopics).ok, false);
+});
+
+test("parseImport rejects duplicate ids", () => {
+  const result = parseImport(wrap([importQ, { ...importQ }]), importTopics);
+  assert.strictEqual(result.ok, false);
+  assert.match(result.error, /share the id 1/);
+});
+
+test("parseImport rejects a topic that does not exist", () => {
+  const result = parseImport(wrap([{ ...importQ, topicId: 999 }]), importTopics);
+  assert.strictEqual(result.ok, false);
+  assert.match(result.error, /topic that doesn’t exist/);
+});
+
+test("parseImport rejects a topic that belongs to a different subject", () => {
+  const result = parseImport(wrap([{ ...importQ, subjectId: 2 }]), importTopics);
+  assert.strictEqual(result.ok, false);
+  assert.match(result.error, /doesn’t belong to its subject/);
+});
+
+test("parseImport rejects an empty list of questions", () => {
+  assert.strictEqual(parseImport(wrap([]), importTopics).ok, false);
 });

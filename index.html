@@ -82,7 +82,13 @@
       <ul id="question-list">
         <li>Questions will appear here.</li>
       </ul>
-      <button type="button" id="reset-data">Reset to sample data</button>
+      <div class="io-row">
+        <button type="button" id="export-btn">Export data</button>
+        <button type="button" id="import-btn">Import data</button>
+        <button type="button" id="reset-data">Reset to sample data</button>
+        <input type="file" id="import-file" accept=".json,application/json" hidden>
+      </div>
+      <p id="io-status" aria-live="polite"></p>
     </section>
 
     <section id="stats-section">

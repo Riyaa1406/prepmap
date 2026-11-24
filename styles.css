@@ -175,3 +175,18 @@ button {
   background: #e6f2ea;
   font-weight: 600;
 }
+.io-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+#io-status {
+  margin: 8px 0 0;
+  font-size: 0.9rem;
+}
+
+#io-status.bad {
+  color: #b00020;
+}

@@ -34,6 +34,10 @@ const formTitle = document.querySelector("#form-title");
 const submitBtn = document.querySelector("#submit-btn");
 const cancelBtn = document.querySelector("#cancel-edit");
 const resetBtn = document.querySelector("#reset-data");
+const exportBtn = document.querySelector("#export-btn");
+const importBtn = document.querySelector("#import-btn");
+const importFile = document.querySelector("#import-file");
+const ioStatus = document.querySelector("#io-status");
 const subjectSelect = document.querySelector("#subject");
 const topicSelect = document.querySelector("#topic");
 
@@ -170,6 +174,12 @@ function showErrors(errors) {
   ["subject", "topic", "title", "year", "marks"].forEach((field) => {
     document.querySelector(`#error-${field}`).textContent = errors[field] || "";
   });
+}
+
+// Message under the Export / Import buttons
+function showStatus(message, isError = false) {
+  ioStatus.textContent = message;
+  ioStatus.className = isError ? "bad" : "";
 }
 
 // ----- Drawing the page -----
@@ -332,6 +342,65 @@ function deleteQuestion(id) {
   render();
 }
 
+// ----- Export and import -----
+
+// Download all questions as a .json file
+function exportData() {
+  const payload = {
+    app: "prepmap",
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    questions: state.questions,
+  };
+
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `prepmap-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+
+  showStatus(`Exported ${state.questions.length} questions.`);
+}
+
+// Read a chosen file, check it, then replace the questions with its contents
+async function importData(file) {
+  if (file.size > 1000000) {
+    showStatus("Couldn’t import: this file is too large for a PrepMap backup.", true);
+    return;
+  }
+
+  let text;
+  try {
+    text = await file.text();
+  } catch (error) {
+    showStatus("Couldn’t import: the file could not be read.", true);
+    return;
+  }
+
+  const result = parseImport(text, topics);
+  if (!result.ok) {
+    showStatus(`Couldn’t import: ${result.error}`, true);
+    return;
+  }
+
+  const message = `Replace your ${state.questions.length} questions with the ${result.questions.length} in this file?`;
+  if (!confirm(message)) {
+    showStatus("Import cancelled. Nothing changed.");
+    return;
+  }
+
+  state.questions = result.questions;
+  saveQuestions();
+  exitEditMode();
+  render();
+  showStatus(`Imported ${result.questions.length} questions.`);
+}
+
 // ----- Events -----
 
 list.addEventListener("click", (event) => {
@@ -346,6 +415,14 @@ list.addEventListener("click", (event) => {
 cancelBtn.addEventListener("click", exitEditMode);
 subjectSelect.addEventListener("change", fillTopics);
 
+exportBtn.addEventListener("click", exportData);
+importBtn.addEventListener("click", () => importFile.click());
+importFile.addEventListener("change", () => {
+  const file = importFile.files[0];
+  if (file) importData(file);
+  importFile.value = ""; // so choosing the same file again still triggers this
+});
+
 resetBtn.addEventListener("click", () => {
   if (!confirm("Replace all your questions with the original sample data? Your changes will be lost.")) return;
 
@@ -357,6 +434,7 @@ resetBtn.addEventListener("click", () => {
   state.questions = [...questions];
   exitEditMode();
   render();
+  showStatus("Reset to the sample data.");
 });
 
 filterSubject.addEventListener("change", () => {
