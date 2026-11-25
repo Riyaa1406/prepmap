@@ -1,4 +1,6 @@
 const STORAGE_KEY = "prepmap-questions-v1";
+const REVISED_KEY = "prepmap-revised-v1";
+const SUBJECT_KEY = "prepmap-subject-v1";
 
 // Saved questions if there are valid ones, otherwise the sample data from data.js
 function loadQuestions() {
@@ -20,12 +22,54 @@ function saveQuestions() {
   }
 }
 
+// Saved list of revised topic ids, or an empty list
+function loadRevised() {
+  try {
+    return parseSavedRevised(localStorage.getItem(REVISED_KEY), topics);
+  } catch (error) {
+    return [];
+  }
+}
+
+function saveRevised() {
+  try {
+    localStorage.setItem(REVISED_KEY, JSON.stringify(state.revised));
+  } catch (error) {
+    // Storage full or blocked. The app keeps working, it just won't remember.
+  }
+}
+
+// The subject that was open last time, if it still exists
+function loadSubjectId() {
+  try {
+    const id = Number(localStorage.getItem(SUBJECT_KEY));
+    if (subjects.some((s) => s.id === id)) return id;
+  } catch (error) {
+    // Storage blocked. Use the first subject.
+  }
+  return subjects[0].id;
+}
+
+function saveSubjectId() {
+  try {
+    localStorage.setItem(SUBJECT_KEY, String(state.subjectId));
+  } catch (error) {
+    // Storage full or blocked. The app keeps working.
+  }
+}
+
 const state = {
   questions: loadQuestions(),
+  revised: loadRevised(), // ids of topics marked as revised
+  subjectId: loadSubjectId(), // course and year of study are worked out from the subject
   editingId: null, // id of the question being edited, or null
-  filters: { subjectId: 0, topicId: 0, year: 0, text: "" }, // 0 or "" means "no filter"
-  statsSubjectId: subjects[0].id, // which subject the chart and priority table show
+  filters: { topicId: 0, year: 0, text: "" }, // 0 or "" means "no filter". year = EXAM year
 };
+
+const courseSelect = document.querySelector("#course-select");
+const yearSelect = document.querySelector("#year-select");
+const subjectSelect = document.querySelector("#subject-select");
+const subjectInfo = document.querySelector("#subject-info");
 
 const list = document.querySelector("#question-list");
 const countText = document.querySelector("#question-count");
@@ -38,108 +82,99 @@ const exportBtn = document.querySelector("#export-btn");
 const importBtn = document.querySelector("#import-btn");
 const importFile = document.querySelector("#import-file");
 const ioStatus = document.querySelector("#io-status");
-const subjectSelect = document.querySelector("#subject");
 const topicSelect = document.querySelector("#topic");
 
-const filterSubject = document.querySelector("#filter-subject");
 const filterTopic = document.querySelector("#filter-topic");
 const filterYear = document.querySelector("#filter-year");
 const filterText = document.querySelector("#filter-text");
 
 const chart = document.querySelector("#chart");
 const stats = document.querySelector("#stats");
-const statsSubject = document.querySelector("#stats-subject");
+const syllabus = document.querySelector("#syllabus");
+
+// ----- Small helpers -----
+
+function addOption(select, value, text) {
+  const option = document.createElement("option");
+  option.value = value;
+  option.textContent = text;
+  select.appendChild(option);
+}
+
+function currentSubject() {
+  return subjects.find((s) => s.id === state.subjectId);
+}
+
+function currentTopics() {
+  return topics.filter((t) => t.subjectId === state.subjectId);
+}
+
+function currentQuestions() {
+  return state.questions.filter((q) => q.subjectId === state.subjectId);
+}
 
 function topicName(topicId) {
   const topic = topics.find((t) => t.id === topicId);
   return topic ? topic.name : "Unknown topic";
 }
 
-// ----- Add / edit form dropdowns -----
+// ----- Course, year of study, subject -----
 
-function fillSubjects() {
-  subjects.forEach((s) => {
-    const option = document.createElement("option");
-    option.value = s.id;
-    option.textContent = `${s.name} (${s.code})`;
-    subjectSelect.appendChild(option);
-  });
+function fillScope() {
+  const subject = currentSubject();
+
+  courseSelect.innerHTML = "";
+  courses.forEach((c) => addOption(courseSelect, c.id, c.name));
+  courseSelect.value = subject.courseId;
+
+  yearSelect.innerHTML = "";
+  yearsForCourse(subjects, subject.courseId).forEach((y) => addOption(yearSelect, y, `Year ${y}`));
+  yearSelect.value = subject.year;
+
+  subjectSelect.innerHTML = "";
+  subjectsFor(subjects, subject.courseId, subject.year).forEach((s) =>
+    addOption(subjectSelect, s.id, `${s.name} (${s.code})`)
+  );
+  subjectSelect.value = subject.id;
+
+  subjectInfo.textContent = `${subject.code} · Semester ${subject.semester} · Year ${subject.year}`;
 }
+
+// Open another subject. Everything on the page follows it.
+function switchSubject(subjectId) {
+  state.subjectId = subjectId;
+  state.filters = { topicId: 0, year: 0, text: "" };
+  filterText.value = "";
+  saveSubjectId();
+
+  exitEditMode();
+  fillScope();
+  fillFilterTopics();
+  render();
+}
+
+// ----- Add / edit form and filter dropdowns -----
 
 function fillTopics() {
   topicSelect.innerHTML = '<option value="">Choose a topic</option>';
-  const subjectId = Number(subjectSelect.value);
-
-  topics
-    .filter((t) => t.subjectId === subjectId)
-    .forEach((t) => {
-      const option = document.createElement("option");
-      option.value = t.id;
-      option.textContent = t.name;
-      topicSelect.appendChild(option);
-    });
-}
-
-// ----- Filter dropdowns -----
-
-function fillFilterSubjects() {
-  subjects.forEach((s) => {
-    const option = document.createElement("option");
-    option.value = s.id;
-    option.textContent = s.name;
-    filterSubject.appendChild(option);
-  });
+  currentTopics().forEach((t) => addOption(topicSelect, t.id, t.name));
 }
 
 function fillFilterTopics() {
   filterTopic.innerHTML = '<option value="">All topics</option>';
-
-  topics
-    .filter((t) => !state.filters.subjectId || t.subjectId === state.filters.subjectId)
-    .forEach((t) => {
-      const option = document.createElement("option");
-      option.value = t.id;
-      option.textContent = t.name;
-      filterTopic.appendChild(option);
-    });
-
+  currentTopics().forEach((t) => addOption(filterTopic, t.id, t.name));
   filterTopic.value = state.filters.topicId || "";
 }
 
+// Exam years come from this subject's questions, so a new year appears automatically
 function fillFilterYears() {
-  const years = [...new Set(state.questions.map((q) => q.year))].sort((a, b) => b - a);
+  const years = [...new Set(currentQuestions().map((q) => q.year))].sort((a, b) => b - a);
 
   filterYear.innerHTML = '<option value="">All years</option>';
-  years.forEach((y) => {
-    const option = document.createElement("option");
-    option.value = y;
-    option.textContent = y;
-    filterYear.appendChild(option);
-  });
+  years.forEach((y) => addOption(filterYear, y, y));
 
   if (!years.includes(state.filters.year)) state.filters.year = 0;
   filterYear.value = state.filters.year || "";
-}
-
-// ----- Stats subject dropdown -----
-
-function fillStatsSubjects() {
-  subjects.forEach((s) => {
-    const option = document.createElement("option");
-    option.value = s.id;
-    option.textContent = s.name;
-    statsSubject.appendChild(option);
-  });
-  statsSubject.value = state.statsSubjectId;
-}
-
-// The chart and priority table always cover ONE subject,
-// so percentages never mix marks from different subjects.
-function statsData() {
-  return {
-    topics: topics.filter((t) => t.subjectId === state.statsSubjectId),
-    questions: state.questions.filter((q) => q.subjectId === state.statsSubjectId),
-  };
 }
 
 // ----- Data helpers -----
@@ -152,7 +187,6 @@ function validateQuestion(q) {
   const errors = {};
   const thisYear = new Date().getFullYear();
 
-  if (!q.subjectId) errors.subject = "Choose a subject.";
   if (!q.topicId) errors.topic = "Choose a topic.";
 
   if (q.title.length < 3) errors.title = "Write at least 3 characters.";
@@ -171,7 +205,7 @@ function validateQuestion(q) {
 }
 
 function showErrors(errors) {
-  ["subject", "topic", "title", "year", "marks"].forEach((field) => {
+  ["topic", "title", "year", "marks"].forEach((field) => {
     document.querySelector(`#error-${field}`).textContent = errors[field] || "";
   });
 }
@@ -186,13 +220,12 @@ function showStatus(message, isError = false) {
 
 // One bar per topic. Width = this topic's count as a share of the biggest count.
 function renderChart() {
-  const data = statsData();
-  const counts = countByTopic(data.questions);
+  const counts = countByTopic(currentQuestions());
   const max = Math.max(1, ...Object.values(counts));
 
   chart.innerHTML = "";
 
-  data.topics.forEach((t) => {
+  currentTopics().forEach((t) => {
     const count = counts[t.id] || 0;
 
     const row = document.createElement("div");
@@ -218,22 +251,48 @@ function renderChart() {
   });
 }
 
-// Ranked table. Topics in the first 60% of marks are highlighted.
+// Progress bar, then the ranked table with a Revised checkbox per topic.
+// Topics in the first 60% of marks are highlighted.
 function renderPriority() {
-  const data = statsData();
-  const ranked = markCore(priorityList(data.topics, data.questions), 60);
-  const totalMarks = data.questions.reduce((sum, q) => sum + q.marks, 0);
+  const subjectTopics = currentTopics();
+  const subjectQuestions = currentQuestions();
+  const ranked = markCore(priorityList(subjectTopics, subjectQuestions), 60);
+  const totalMarks = subjectQuestions.reduce((sum, q) => sum + q.marks, 0);
   const coreCount = ranked.filter((t) => t.core).length;
+
+  const unitOf = {};
+  subjectTopics.forEach((t) => {
+    unitOf[t.id] = t.unit;
+  });
 
   stats.innerHTML = "";
 
+  // Revision progress for this subject
+  const progress = revisionProgress(ranked, state.revised);
+
+  const box = document.createElement("div");
+  box.className = "progress-box";
+
+  const bar = document.createElement("progress");
+  bar.max = 100;
+  bar.value = progress.percent;
+  bar.setAttribute("aria-label", "Share of topics revised");
+
+  const line = document.createElement("p");
+  line.textContent =
+    `Revised ${progress.done} of ${progress.total} topics (${progress.percent}%).` +
+    (totalMarks > 0
+      ? ` Those topics cover ${progress.marksDone} of ${progress.marksTotal} marks (${progress.marksPercent}%).`
+      : "");
+
+  box.append(bar, line);
+  stats.appendChild(box);
+
   const note = document.createElement("p");
-  if (totalMarks === 0) {
-    note.textContent = "No questions yet for this subject.";
-    stats.appendChild(note);
-    return;
-  }
-  note.textContent = `${coreCount} of ${ranked.length} topics cover the first 60% of the ${totalMarks} marks. Study these first.`;
+  note.textContent =
+    totalMarks === 0
+      ? "No questions yet for this subject, so every topic shows 0 marks. Add questions from past papers to see which topics matter most."
+      : `${coreCount} of ${ranked.length} topics cover the first 60% of the ${totalMarks} marks. Study these first.`;
   stats.appendChild(note);
 
   const wrap = document.createElement("div");
@@ -241,25 +300,41 @@ function renderPriority() {
   const table = document.createElement("table");
 
   const head = document.createElement("tr");
-  ["#", "Topic", "Marks", "Cumulative %", ""].forEach((text, i) => {
+  ["#", "Topic", "Unit", "Marks", "Cumulative %", "Revised", ""].forEach((text, i) => {
     const th = document.createElement("th");
     th.textContent = text;
-    if (i === 2 || i === 3) th.className = "num";
+    if (i === 3 || i === 4) th.className = "num";
     head.appendChild(th);
   });
   table.appendChild(head);
 
   ranked.forEach((t, i) => {
-    const tr = document.createElement("tr");
-    if (t.core) tr.className = "core";
+    const revised = state.revised.includes(t.id);
 
-    const cells = [i + 1, t.name, t.marks, `${t.cumulativePercent}%`, t.core ? "Study first" : ""];
+    const tr = document.createElement("tr");
+    tr.className = [t.core ? "core" : "", revised ? "done-topic" : ""].join(" ").trim();
+
+    const cells = [i + 1, t.name, unitOf[t.id], t.marks, `${t.cumulativePercent}%`];
     cells.forEach((value, col) => {
       const td = document.createElement("td");
       td.textContent = value;
-      if (col === 2 || col === 3) td.className = "num";
+      if (col === 3 || col === 4) td.className = "num";
       tr.appendChild(td);
     });
+
+    const checkCell = document.createElement("td");
+    checkCell.className = "check";
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = revised;
+    checkbox.dataset.topicId = t.id;
+    checkbox.setAttribute("aria-label", `Mark ${t.name} as revised`);
+    checkCell.appendChild(checkbox);
+    tr.appendChild(checkCell);
+
+    const flag = document.createElement("td");
+    flag.textContent = t.core && !revised ? "Study first" : "";
+    tr.appendChild(flag);
 
     table.appendChild(tr);
   });
@@ -268,16 +343,33 @@ function renderPriority() {
   stats.appendChild(wrap);
 }
 
+// The subject's syllabus: its units, each with its topics
+function renderSyllabus() {
+  syllabus.innerHTML = "";
+
+  groupByUnit(currentTopics()).forEach((group) => {
+    const p = document.createElement("p");
+    const label = document.createElement("strong");
+    label.textContent = `Unit ${group.unit}: `;
+    p.append(label, group.topics.map((t) => t.name).join(" · "));
+    syllabus.appendChild(p);
+  });
+}
+
 function render() {
   fillFilterYears();
 
-  const visible = filterQuestions(state.questions, state.filters);
+  const subjectQuestions = currentQuestions();
+  const visible = filterQuestions(subjectQuestions, state.filters);
 
   list.innerHTML = "";
 
   if (visible.length === 0) {
     const li = document.createElement("li");
-    li.textContent = "No questions match these filters.";
+    li.textContent =
+      subjectQuestions.length === 0
+        ? "No questions yet for this subject. Add one with the form."
+        : "No questions match these filters.";
     list.appendChild(li);
   }
 
@@ -297,9 +389,24 @@ function render() {
     list.appendChild(li);
   });
 
-  countText.textContent = `Showing ${visible.length} of ${state.questions.length} questions`;
+  countText.textContent = `Showing ${visible.length} of ${subjectQuestions.length} questions`;
   renderChart();
   renderPriority();
+  renderSyllabus();
+}
+
+// ----- Revised topics -----
+
+function toggleRevised(topicId, isRevised) {
+  const without = state.revised.filter((id) => id !== topicId);
+  state.revised = isRevised ? [...without, topicId] : without;
+
+  saveRevised();
+  render();
+
+  // render() rebuilt the table, so put the keyboard focus back on the same checkbox
+  const again = stats.querySelector(`input[data-topic-id="${topicId}"]`);
+  if (again) again.focus();
 }
 
 // ----- Edit and delete -----
@@ -319,7 +426,6 @@ function startEdit(id) {
   if (!q) return;
 
   state.editingId = id;
-  subjectSelect.value = q.subjectId;
   fillTopics();
   topicSelect.value = q.topicId;
   document.querySelector("#title").value = q.title;
@@ -344,7 +450,7 @@ function deleteQuestion(id) {
 
 // ----- Export and import -----
 
-// Download all questions as a .json file
+// Download all questions (every subject) as a .json file
 function exportData() {
   const payload = {
     app: "prepmap",
@@ -403,6 +509,22 @@ async function importData(file) {
 
 // ----- Events -----
 
+courseSelect.addEventListener("change", () => {
+  const courseId = Number(courseSelect.value);
+  const firstYear = yearsForCourse(subjects, courseId)[0];
+  const first = subjectsFor(subjects, courseId, firstYear)[0];
+  if (first) switchSubject(first.id);
+});
+
+yearSelect.addEventListener("change", () => {
+  const first = subjectsFor(subjects, currentSubject().courseId, Number(yearSelect.value))[0];
+  if (first) switchSubject(first.id);
+});
+
+subjectSelect.addEventListener("change", () => {
+  switchSubject(Number(subjectSelect.value));
+});
+
 list.addEventListener("click", (event) => {
   const button = event.target.closest("button[data-action]");
   if (!button) return;
@@ -412,8 +534,14 @@ list.addEventListener("click", (event) => {
   if (button.dataset.action === "delete") deleteQuestion(id);
 });
 
+// One listener on the stats area handles every Revised checkbox
+stats.addEventListener("change", (event) => {
+  const checkbox = event.target.closest("input[data-topic-id]");
+  if (!checkbox) return;
+  toggleRevised(Number(checkbox.dataset.topicId), checkbox.checked);
+});
+
 cancelBtn.addEventListener("click", exitEditMode);
-subjectSelect.addEventListener("change", fillTopics);
 
 exportBtn.addEventListener("click", exportData);
 importBtn.addEventListener("click", () => importFile.click());
@@ -437,13 +565,6 @@ resetBtn.addEventListener("click", () => {
   showStatus("Reset to the sample data.");
 });
 
-filterSubject.addEventListener("change", () => {
-  state.filters.subjectId = Number(filterSubject.value);
-  state.filters.topicId = 0;
-  fillFilterTopics();
-  render();
-});
-
 filterTopic.addEventListener("change", () => {
   state.filters.topicId = Number(filterTopic.value);
   render();
@@ -459,11 +580,6 @@ filterText.addEventListener("input", () => {
   render();
 });
 
-statsSubject.addEventListener("change", () => {
-  state.statsSubjectId = Number(statsSubject.value);
-  render();
-});
-
 form.addEventListener("submit", (event) => {
   event.preventDefault();
 
@@ -471,7 +587,7 @@ form.addEventListener("submit", (event) => {
 
   const newQuestion = {
     id: isEditing ? state.editingId : nextId(),
-    subjectId: Number(subjectSelect.value),
+    subjectId: state.subjectId,
     topicId: Number(topicSelect.value),
     title: document.querySelector("#title").value.trim(),
     year: Number(document.querySelector("#year").value),
@@ -497,9 +613,7 @@ form.addEventListener("submit", (event) => {
 
 // ----- Start -----
 
-fillSubjects();
+fillScope();
 fillTopics();
-fillFilterSubjects();
 fillFilterTopics();
-fillStatsSubjects();
 render();

@@ -44,6 +44,48 @@ function markCore(list, threshold = 60) {
   });
 }
 
+// How much of a subject is revised? `list` items need an id and marks.
+// Gives progress by topic count AND by marks covered.
+function revisionProgress(list, revisedIds) {
+  const revised = new Set(revisedIds);
+  const done = list.filter((t) => revised.has(t.id));
+  const marksTotal = list.reduce((sum, t) => sum + t.marks, 0);
+  const marksDone = done.reduce((sum, t) => sum + t.marks, 0);
+
+  return {
+    done: done.length,
+    total: list.length,
+    percent: list.length === 0 ? 0 : Math.round((done.length / list.length) * 100),
+    marksDone,
+    marksTotal,
+    marksPercent: marksTotal === 0 ? 0 : Math.round((marksDone / marksTotal) * 100),
+  };
+}
+
+// The years of study that a course has subjects for, each once, in order
+function yearsForCourse(subjects, courseId) {
+  const years = subjects.filter((s) => s.courseId === courseId).map((s) => s.year);
+  return [...new Set(years)].sort((a, b) => a - b);
+}
+
+// The subjects of one course in one year of study
+function subjectsFor(subjects, courseId, year) {
+  return subjects.filter((s) => s.courseId === courseId && s.year === year);
+}
+
+// Groups topics by syllabus unit, in unit order: [{ unit: 1, topics: [...] }, ...]
+function groupByUnit(topics) {
+  const units = {};
+  topics.forEach((t) => {
+    (units[t.unit] = units[t.unit] || []).push(t);
+  });
+
+  return Object.keys(units)
+    .map(Number)
+    .sort((a, b) => a - b)
+    .map((unit) => ({ unit, topics: units[unit] }));
+}
+
 // Keep only the questions that match every filter that was given
 function filterQuestions(questions, filters = {}) {
   const { subjectId, topicId, year, text } = filters;
@@ -82,6 +124,20 @@ function parseSavedQuestions(text) {
     return data.every(hasValidShape) ? data : null;
   } catch (error) {
     return null;
+  }
+}
+
+// Turns saved text back into a list of revised topic ids.
+// Anything broken gives an empty list. Unknown ids and duplicates are dropped.
+function parseSavedRevised(text, topics) {
+  try {
+    const data = JSON.parse(text);
+    if (!Array.isArray(data)) return [];
+
+    const known = new Set(topics.map((t) => t.id));
+    return [...new Set(data)].filter((id) => Number.isInteger(id) && known.has(id));
+  } catch (error) {
+    return [];
   }
 }
 
@@ -133,8 +189,13 @@ if (typeof module !== "undefined") {
     marksByTopic,
     priorityList,
     markCore,
+    revisionProgress,
+    yearsForCourse,
+    subjectsFor,
+    groupByUnit,
     filterQuestions,
     parseSavedQuestions,
+    parseSavedRevised,
     parseImport,
   };
 }
@@ -143,8 +204,8 @@ if (typeof module !== "undefined") {
 if (typeof require !== "undefined" && require.main === module) {
   const { topics, questions } = require("./data");
 
-  console.log("Priority list:");
-  priorityList(topics, questions).forEach((t, i) => {
+  console.log("Priority list (all subjects together, for a quick check only):");
+  priorityList(topics, questions).slice(0, 5).forEach((t, i) => {
     console.log(i + 1 + ".", t.name, "|", t.marks, "marks |", t.cumulativePercent + "%");
   });
 

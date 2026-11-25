@@ -37,7 +37,8 @@ section h2 {
 
 /* Each label + field stacks vertically */
 form p,
-#filter-section p {
+#filter-section p,
+#scope-section .scope-row p {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -51,48 +52,31 @@ button {
   padding: 8px;
 }
 
+input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  accent-color: #2f6f4f;
+  cursor: pointer;
+}
+
 button {
   cursor: pointer;
 }
 
-#question-list {
-  padding-left: 20px;
+/* Course, year, subject */
+.scope-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0 12px;
 }
 
-#question-list li {
-  margin-bottom: 6px;
+#subject-info {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #555;
 }
 
-/* Wider screens: two columns */
-@media (min-width: 800px) {
-  main {
-    display: grid;
-    grid-template-columns: 1fr 1.5fr;
-    grid-template-areas:
-      "add list"
-      "filter list"
-      "stats stats";
-    gap: 16px;
-    align-items: start;
-  }
-
-  section {
-    margin-bottom: 0;
-  }
-
-  #add-section { grid-area: add; }
-  #filter-section { grid-area: filter; }
-  #list-section { grid-area: list; }
-  #stats-section { grid-area: stats; }
-}
-.error {
-  color: #b00020;
-  font-size: 0.875rem;
-}
-
-.error:empty {
-  display: none;
-}
 #question-list {
   list-style: none;
   padding-left: 0;
@@ -117,6 +101,48 @@ button {
   padding: 4px 8px;
   font-size: 0.85rem;
 }
+
+/* Wider screens: two columns */
+@media (min-width: 800px) {
+  .scope-row {
+    grid-template-columns: 1fr 1fr 2fr;
+  }
+
+  main {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    grid-template-areas:
+      "scope scope"
+      "add list"
+      "filter list"
+      "stats stats"
+      "syllabus syllabus";
+    gap: 16px;
+    align-items: start;
+  }
+
+  section {
+    margin-bottom: 0;
+  }
+
+  #scope-section { grid-area: scope; }
+  #add-section { grid-area: add; }
+  #filter-section { grid-area: filter; }
+  #list-section { grid-area: list; }
+  #stats-section { grid-area: stats; }
+  #syllabus-section { grid-area: syllabus; }
+}
+
+.error {
+  color: #b00020;
+  font-size: 0.875rem;
+}
+
+.error:empty {
+  display: none;
+}
+
+/* Topic chart */
 #stats-section h3 {
   font-size: 1rem;
   margin: 0 0 8px;
@@ -150,6 +176,8 @@ button {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
+
+/* Priority table */
 .table-wrap {
   overflow-x: auto;
 }
@@ -171,10 +199,42 @@ button {
   text-align: right;
 }
 
+#stats td.check {
+  text-align: center;
+}
+
 #stats tr.core {
   background: #e6f2ea;
   font-weight: 600;
 }
+
+#stats tr.done-topic td {
+  color: #777;
+}
+
+/* Revision progress */
+.progress-box {
+  margin: 0 0 12px;
+}
+
+.progress-box progress {
+  width: 100%;
+  height: 14px;
+  accent-color: #2f6f4f;
+}
+
+.progress-box p {
+  margin: 4px 0 0;
+  font-size: 0.9rem;
+}
+
+/* Syllabus */
+#syllabus p {
+  margin: 0 0 8px;
+  font-size: 0.9rem;
+}
+
+/* Export / import */
 .io-row {
   display: flex;
   flex-wrap: wrap;

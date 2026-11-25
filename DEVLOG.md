@@ -89,3 +89,8 @@
 - Did: added Export (downloads a JSON backup file) and Import (reads a file, checks it with parseImport, then replaces the questions). parseImport has 6 tests.
 - What broke: I pasted the test code into logic.js instead of logic.test.js, so logic.js lost its functions. Node warned about a circular dependency (the file was requiring itself) and all tests failed with "is not a function". I fixed it by restoring logic.js and putting the tests in logic.test.js.
 - What I learned: an imported file is untrusted input, just like form input and saved data, so it is validated for shape, duplicate ids, unknown topics and topic and subject mismatches before it touches state. When many tests fail at once with the same error, I should suspect the file they import, and the stack trace shows which file each test lives in.
+
+## Day 18: Revision progress
+- Did: added a Revised checkbox per topic in the priority table and a progress bar per subject, showing both topics revised and the marks those topics cover. Added revisionProgress and parseSavedRevised to logic.js with 7 tests (30 in total).
+- What broke: nothing.
+- What I learned: the revised flag is stored separately in localStorage, as a list of topic ids, because data.js is only the fixed starting data. Saved ticks are validated like every other input, and progress is worked out from the data and never stored itself.
